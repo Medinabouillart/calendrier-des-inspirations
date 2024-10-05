@@ -1,48 +1,52 @@
 document.getElementById('generate-citation').addEventListener('click', async function() {
     try {
-        const response = await fetch('citations.json');
+        const response = await fetch('citations.json'); // Charger le fichier JSON des citations
         const data = await response.json();
         const randomCitation = data.citations[Math.floor(Math.random() * data.citations.length)];
 
-        // Faire disparaître le bouton
-        const button = document.getElementById('generate-citation');
-        button.classList.add('fade-out'); // Ajoute la classe pour l'effet de disparition
-        button.disabled = true; // Désactive le bouton pour éviter de multiples clics
+        // Afficher la citation
+        document.querySelector('.citation-container').style.display = 'block';
+        document.getElementById('citation-text').innerText = `"${randomCitation.text}"`;
+        document.getElementById('citation-author').innerText = `- ${randomCitation.author}`;
 
-        // Afficher la citation après un délai
-        setTimeout(() => {
-            button.parentElement.innerHTML = `
-                <div class="citation-container">
-                    <p id="citation-text">"${randomCitation.text}"</p>
-                    <p id="citation-author">- ${randomCitation.author}</p>
-                    <p id="timer">Vous pourrez obtenir votre prochaine citation dans <span id="timer-countdown">24 heures</span>.</p>
-                </div>
-            `;
-            startTimer(); // Démarre le timer
-            document.querySelector('.share-container').style.display = 'block'; // Affiche le conteneur de partage
-        }, 500);
+        // Encodage de la citation pour l'URL
+        const shareMessage = encodeURIComponent(`"${randomCitation.text}" - ${randomCitation.author}`);
+        const baseURL = 'http://127.0.0.1:5500/index.html'; // URL de ton site local ou en ligne
+
+        // Lien de partage LinkedIn
+        document.getElementById('linkedin-share').href = `https://www.linkedin.com/sharing/share-offsite/?url=${baseURL}&title=${shareMessage}`;
+
+        // Mise à jour des liens de partage pour les autres réseaux sociaux
+        document.getElementById('twitter-share').href = `https://twitter.com/intent/tweet?text=${shareMessage}&url=${baseURL}`;
+        document.getElementById('whatsapp-share').href = `https://api.whatsapp.com/send?text=${shareMessage}`;
+
+        // Afficher la section de partage
+        document.querySelector('.share-container').style.display = 'block';
+
+        // Stocker la citation affichée dans le localStorage
+        localStorage.setItem('citation', JSON.stringify(randomCitation));
+
     } catch (error) {
         console.error('Erreur lors de la récupération de la citation', error);
     }
 });
 
-function startTimer() {
-    const countdownElement = document.getElementById('timer-countdown');
-    let remainingTime = 24 * 60 * 60; // 24 heures en secondes
+// Restaurer l'état si une citation a déjà été générée
+window.onload = function() {
+    const savedCitation = localStorage.getItem('citation');
 
-    const timerInterval = setInterval(() => {
-        const hours = Math.floor(remainingTime / 3600);
-        const minutes = Math.floor((remainingTime % 3600) / 60);
-        const seconds = remainingTime % 60;
+    if (savedCitation) {
+        const citation = JSON.parse(savedCitation);
 
-        countdownElement.innerText = `${hours}h ${minutes}m ${seconds}s`;
+        // Afficher la citation sauvegardée
+        displayCitation(citation);
+        document.querySelector('.share-container').style.display = 'block';
+    }
+};
 
-        remainingTime--;
-
-        if (remainingTime < 0) {
-            clearInterval(timerInterval);
-            countdownElement.innerText = "Il est temps de générer une nouvelle citation!";
-        }
-    }, 1000);
+// Fonction pour afficher la citation
+function displayCitation(citation) {
+    document.querySelector('.citation-container').style.display = 'block';
+    document.getElementById('citation-text').innerText = `"${citation.text}"`;
+    document.getElementById('citation-author').innerText = `- ${citation.author}`;
 }
-
